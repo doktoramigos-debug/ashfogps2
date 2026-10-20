@@ -4,11 +4,13 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    runs-on: ubuntu-latest
-    container: ps2dev/ps2dev:latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - run: make clean all
+      - name: Build ELF in ps2dev image
+        run: |
+          docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:latest sh -c "(which make >/dev/null || apk add --no-cache make) && make clean all"
+          ls -la ashfog.elf
       - uses: actions/upload-artifact@v4
         with:
           name: ashfog-elf
