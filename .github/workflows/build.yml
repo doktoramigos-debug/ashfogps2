@@ -9,9 +9,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build ELF in ps2dev image
         run: |
-          docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:latest sh -c "(which make >/dev/null || apk add --no-cache make) && make clean all"
-          ls -la ashfog.elf
+          set -o pipefail
+          docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:latest sh -c "(which make >/dev/null || apk add --no-cache make) && make clean all" 2>&1 | tee build.log
+      - name: Show errors
+        if: failure()
+        run: |
+          grep -iE "error|undefined|not found|No such" build.log | head -9 | while IFS= read -r l; do echo "::error::$l"; done
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: ashfog-elf
-          path: ashfog.elf
+          name: ashfog-elf-or-log
+          path: |
+            ashfog.elf
+            build.log
